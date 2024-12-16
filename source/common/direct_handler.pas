@@ -321,7 +321,7 @@ begin
     LogChatPayload.Text:= Response.Content;
     LogChat(ChannelId, Carik.GroupChatID, Carik.GroupName, Carik.UserID, Carik.UserName, Carik.FullName, OriginalText, '', Carik.IsGroup, True);
     //OutputJson(11, 'muted: ' + MutedUntil.AsString);
-    Response.Content:= SimpleBOT.SimpleAI.ResponseJson;
+    Response.Content := SimpleBOT.SimpleAI.ResponseJson;
     Exit;
   end;
 

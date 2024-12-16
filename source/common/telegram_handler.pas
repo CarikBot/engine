@@ -479,7 +479,6 @@ begin
   SimpleBOT.SessionUserID := UniqueID;
   SimpleBOT.FirstSessionResponse := s2b(Config[TELEGRAM_BOT_FIRST_SESSION_RESPONSE]);
 
-
   // get member count
   deltaMember := 0;
   if TELEGRAM.IsGroup then
@@ -489,7 +488,7 @@ begin
     begin
       key := BotName + '_group_' + TELEGRAM.ChatID + '_count';
       s := SimpleBOT.Redis[key];
-      LogUtil.Add(TELEGRAM.GroupName + '; member dari db: ' + s, '#MEMBER');
+      //LogUtil.Add(TELEGRAM.GroupName + '; member dari db: ' + s, '#MEMBER');
       if s2i(s) <= 0 then
       begin
         LogUtil.Add(TELEGRAM.GroupName + '; set db: ' + memberCount.ToString, '#MEMBER');
@@ -497,10 +496,10 @@ begin
       else
       begin
         deltaMember := memberCount - s2i(s);
-        if deltaMember > 0 then
-           LogUtil.Add(TELEGRAM.GroupName + ' member: ADD: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER')
-        else
-           LogUtil.Add(TELEGRAM.GroupName + ' member: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER');
+        //if deltaMember > 0 then
+        //   LogUtil.Add(TELEGRAM.GroupName + ' member: ADD: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER')
+        //else
+        //   LogUtil.Add(TELEGRAM.GroupName + ' member: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER');
       end;
       SimpleBOT.Redis[key] := memberCount.ToString;
     end;
@@ -687,6 +686,7 @@ begin
         begin
           s := Request.Content.Replace(#13,'').Replace(#10,'');
           LogUtil.Add(RequestAsJson.AsJSON, '> JOIN');
+          LogUtil.Add(RequestAsJson.AsJSON, '> JOIN', False, AppData.logDir + 'tele-join.log');
 
           Carik.IsInvitation := True;
           if IsSuspected(TELEGRAM.InvitedUserId, TELEGRAM.InvitedFullName) then
@@ -775,6 +775,7 @@ begin
             end
             else
             if ((Pos('spam', Text.ToLower) = 1)
+              or(Pos('penipuan', Text.ToLower) = 1)
               or(Pos('@admin', Text.ToLower) = 1)
               or (Text.ToLower.IsExists('/scam'))
               or (Text.ToLower.IsExists('/admin'))
@@ -824,6 +825,7 @@ begin
                   begin
                     spamScoreTotal+= SPAM_SCORE_THRESHOLD;
                   end;
+                  LogUtil.Add( spamScoreTotal.ToString + ': ' + RequestAsJson.AsJSON, 'FWD', False, AppData.logDir + 'forward-from-story.log');
                 end;
                 if Carik.isSpamChecking or (spamScoreTotal>0) then
                 begin
@@ -857,6 +859,7 @@ begin
               tmpStr := Text.ToLower;
               if tmpStr.IsPregMatch('^(kick|tendang)') then
               begin
+                LogUtil.Add(RequestAsJson.AsJSON, '#KICK', False, AppData.logDir + 'kick.log');
                 Text := '_groupkickrequest ' + TELEGRAM.ChatID + ' '  + TELEGRAM.ReplyFromID;
                 //if TELEGRAM.ReplyFromUserName = (SimpleBOT.BotName + 'Bot') then
                 //  Text := '_gropkickwhitelisted';
@@ -1245,8 +1248,8 @@ begin
           begin
             LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + ':('+TELEGRAM.GroupName+')::' + TELEGRAM.ResultText + ' |-> ' + s, 'SENTFAILED');
           end;
-          LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + '('+TELEGRAM.GroupName+')::' + OriginalText + ' |-> ' + s, 'SENTLOG1');
-          LogUtil.Add(Request.Content.Replace(#13,'').Replace(#10,''), 'SENTLOG2');
+          //LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + '('+TELEGRAM.GroupName+')::' + OriginalText + ' |-> ' + s, 'SENTLOG1');
+          //LogUtil.Add(Request.Content.Replace(#13,'').Replace(#10,''), 'SENTLOG2');
         end;// /IsCustomAction
       end;
       if AppData.debug then
@@ -1315,7 +1318,13 @@ begin
         begin
           url := SimpleBOT.SimpleAI.CustomReply['action/files['+i.ToString+']/url'];
           fileCaption := SimpleBOT.SimpleAI.CustomReply['action/files['+i.ToString+']/caption'];
-          TELEGRAM.SendAudio(TELEGRAM.ChatID, url, fileCaption, MessageID);
+          voiceFileName := ExtractFileName(url);
+          voiceFileName := preg_replace('[\d.]', '', voiceFileName);
+          voiceFileName := VOICE_TMP_PATH + voiceFileName.Replace('---mp', '') + ExtractFileExt(url);
+          if DownloadFile(url, voiceFileName) then
+          begin
+	          TELEGRAM.SendAudio(TELEGRAM.ChatID, voiceFileName, fileCaption, MessageID);
+          end;
         end;
         if fileType = 'image' then
         begin

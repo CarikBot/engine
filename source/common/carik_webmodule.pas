@@ -114,6 +114,7 @@ type
     FVenueLongitude: double;
     FVenueName: string;
     FGroupData: TIniFile;
+    FIsCustomActionFileExist:boolean;
 
     // TELEGRAM
     function getActiveContext: string;
@@ -419,6 +420,7 @@ type
     property CustomReplyURLFromExternalNLP: string read FCustomReplyURLFromExternalNLP;
     property CustomReplyActionTypeFromExternalNLP: string read FCustomReplyActionTypeFromExternalNLP;
     property CustomReplyDataFromExternalNLP: TJSONUtil read FCustomReplyDataFromExternalNLP;
+    property IsCustomActionFileExist: boolean read FIsCustomActionFileExist write FIsCustomActionFileExist;
     procedure SaveActionToUserDataFromCard(AData: TJSONObject);
     procedure SaveActionToUserDataFromForm(AData: TJSONObject);
     procedure SaveActionToUserData(AActionType: string; AData: TJSONObject = nil);
@@ -3262,7 +3264,7 @@ begin
     lstURL.LoadFromFile(BLACKLIST_URL_FILENAME);
     for i := 0 to lstURL.Count -1 do
     begin
-      if Pos( LowerCase(lstURL[i]), AText) > 0 then
+      if Pos( LowerCase(lstURL[i]).Trim, AText) > 0 then
       begin
         Result := Result + 30;
       end;
@@ -4030,6 +4032,11 @@ begin
     jsonOutput['processing_time'] := SimpleBOT.SimpleAI.ElapsedTime.ToString.ToInteger;
   end;
 
+  if FIsCustomActionFileExist then
+  begin
+    jsonOutput.ValueArray['action/files'] := FCustomActionFiles;
+  end;
+
   if FIsDebug then
     Result := jsonOutput.AsJSONFormated
   else
@@ -4537,8 +4544,10 @@ begin
     httpResponse := Post;
     if _GET['_DEBUG'] <> '1' then
     begin
-      //LogUtil.Add(httpResponse.ResultText, 'logchat');
     end;
+    //LogUtil.Add(responseJson.AsJSON, 'logchat');
+    //LogUtil.Add(log_url, 'logchat');
+    //LogUtil.Add(httpResponse.ResultText, 'logchat');
     Free;
   end;
   try
@@ -4606,6 +4615,7 @@ begin
     ContentType := 'application/json';
     RequestBody := TStringStream.Create(requestJson.AsJSON);
     try
+      LogUtil.Add( 'submit: ' + requestJson.AsJSON, 'JOIN', False, AppData.logDir + 'logjoin.log');
       http_response := Post;
       LogUtil.Add( 'response-join: ' + http_response.ResultText, 'JOIN');
     except
@@ -4750,6 +4760,7 @@ begin
     SimpleBOT.StorageType := stRedis;
   end;
   Carik := TCarikController.Create;
+  FCustomActionFiles := nil;
   FLanguage := 'en-id';
   FSendAudio := False;
   FSendPhoto := False;
@@ -4790,6 +4801,7 @@ begin
   FCustomReplyTypeFromExternalNLP := '';
   FCustomReplyURLFromExternalNLP := '';
   FCustomReplyActionTypeFromExternalNLP := '';
+  FIsCustomActionFileExist := False;
   FExternalNLPStarted := False;
   FGPTTimeout := 0;
   FPackageName := '';
@@ -4938,7 +4950,7 @@ begin
   begin
     SimpleBOT.SimpleAI.AdditionalParameters.Values['ClientId'] := ClientId;;
     SimpleBOT.SimpleAI.AdditionalParameters.Values['client_id'] := ClientId;
-    if DeviceId.IsNotEmpty then SimpleBOT.SimpleAI.AdditionalParameters.Values['dashboard_device_id'] := DeviceId;
+    if DeviceId.IsNotEmpty then SimpleBOT.SimpleAI.AdditionalParameters.Values['dashboard_device_id'] := DashboardDeviceID.ToString;
     if IsDelayReplay then SimpleBOT.SimpleAI.AdditionalParameters.Values['delay_reply'] := '1';
   end;
   if Carik.IsGroup then
@@ -5414,6 +5426,7 @@ function TCarikWebModule.FormInputHandler: boolean;
           FCustomReplyActionTypeFromExternalNLP := 'text';
           if FCustomReplyTypeFromExternalNLP.IsNotEmpty then
           begin
+            LogUtil.Add('external data not empty', 'FORM');
             FCustomReplyActionTypeFromExternalNLP := FCustomReplyDataFromExternalNLP['action/type'];
             FCustomReplyURLFromExternalNLP := FCustomReplyDataFromExternalNLP['action/url'];
             FCustomReplyName := FCustomReplyDataFromExternalNLP['action/name'];
@@ -5721,7 +5734,22 @@ begin
           FCustomReplyDataFromExternalNLP.LoadFromJsonString(httpResponse.ResultText, False);
           Suffix := FCustomReplyDataFromExternalNLP['text'];
 
+          // check files - taruh di sini karena konflik dengan code di bawah *1
+          try
+            if not (FCustomReplyDataFromExternalNLP.Data.FindPath('action.files') = nil) then
+            begin
+              FIsCustomActionFileExist := True;
+              FCustomActionFiles := TJSONArray(GetJSON(FCustomReplyDataFromExternalNLP.Data.GetPath('action.files').AsJSON));
+            end;
+          except
+            on E:Exception do
+            begin
+              //LogUtil.Add('Error: ' + E.Message, 'FORM');
+            end;
+          end;
+
           //TODO: build custom action
+          //TODO: ref *1
           FCustomReplyTypeFromExternalNLP := FCustomReplyDataFromExternalNLP['type'];
           FCustomReplyActionTypeFromExternalNLP := 'text';
           if FCustomReplyTypeFromExternalNLP.IsNotEmpty then
@@ -5745,14 +5773,6 @@ begin
               s := ACTION_SUFFIX.Replace('%s', s);
               Suffix += '\n' + s;
               }
-            end;
-
-            // files
-            FCustomActionFiles := Nil;
-            try
-              LogUtil.Add('ada file', 'FORM');
-              FCustomActionFiles := TJSONArray(FCustomReplyDataFromExternalNLP.Data.GetPath('files'));
-            except
             end;
 
           end;
