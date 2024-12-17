@@ -825,6 +825,10 @@ begin
                   begin
                     spamScoreTotal+= SPAM_SCORE_THRESHOLD;
                   end;
+                  if isBlackListed( TELEGRAM.StoryChatUsername, TELEGRAM.StoryChatId) then
+                  begin
+                    spamScoreTotal+= SPAM_SCORE_THRESHOLD;
+                  end;
                   LogUtil.Add( spamScoreTotal.ToString + ': ' + RequestAsJson.AsJSON, 'FWD', False, AppData.logDir + 'forward-from-story.log');
                 end;
                 if Carik.isSpamChecking or (spamScoreTotal>0) then
@@ -1130,7 +1134,7 @@ begin
 
         s := PrepareTextToSpeech(SimpleBOT.SimpleAI.ResponseText.Text);
         if s <> '' then
-          TELEGRAM.SendAudio(TELEGRAM.ChatID, Config[CARIK_TTS_URL] + s,
+          TELEGRAM.SendVoice(TELEGRAM.ChatID, Config[CARIK_TTS_URL] + s,
             audioCaption, MessageID);
       end;
     end;
@@ -1293,7 +1297,7 @@ begin
 
   if SendAudio then
   begin
-    TELEGRAM.SendAudio(TELEGRAM.ChatID, FileURL, Caption, MessageID);
+    TELEGRAM.SendVoice(TELEGRAM.ChatID, FileURL, Caption, MessageID);
   end;
 
   if SendPhoto then
@@ -1323,7 +1327,7 @@ begin
           voiceFileName := VOICE_TMP_PATH + voiceFileName.Replace('---mp', '') + ExtractFileExt(url);
           if DownloadFile(url, voiceFileName) then
           begin
-	          TELEGRAM.SendAudio(TELEGRAM.ChatID, voiceFileName, fileCaption, MessageID);
+	          TELEGRAM.SendVoice(TELEGRAM.ChatID, voiceFileName, fileCaption, MessageID);
           end;
         end;
         if fileType = 'image' then
@@ -1352,7 +1356,7 @@ begin
       fileType := CustomActionFiles.Items[i].GetPath('type').AsString;
       fileCaption := CustomActionFiles.Items[i].GetPath('caption').AsString;
       if fileType = 'audio' then
-        TELEGRAM.SendAudio(TELEGRAM.ChatID, url, fileCaption, MessageID);
+        TELEGRAM.SendVoice(TELEGRAM.ChatID, url, fileCaption, MessageID);
     end;
   end;
 

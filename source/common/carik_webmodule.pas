@@ -3257,16 +3257,19 @@ begin
   end;
   jData.Free;
 
-  if Result < 80 then
+  if Result < SPAM_SCORE_THRESHOLD then
   begin
     // check blacklisted URL
     lstURL := TStringList.Create;
     lstURL.LoadFromFile(BLACKLIST_URL_FILENAME);
     for i := 0 to lstURL.Count -1 do
     begin
-      if Pos( LowerCase(lstURL[i]).Trim, AText) > 0 then
+      s := LowerCase(lstURL[i]).Trim;
+      if s.IsEmpty then Continue;
+      if s.IsExists('#') then Continue;
+      if Pos( s, AText) > 0 then
       begin
-        Result := Result + 30;
+        Result := Result + SPAM_SCORE_THRESHOLD;
       end;
     end;
     lstURL.Free
