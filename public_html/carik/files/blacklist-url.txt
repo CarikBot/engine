@@ -6,6 +6,7 @@
 @dogsprize_bot
 @EmpirTokenxBot
 @MajorAidrops_Bot
+@MajorAllBot
 @MAJORSTORYBOT
 @Notcoin_DroopBot
 @PAWSQO_BOT
@@ -85,6 +86,7 @@ geets-cliks.com
 gets-offcial.com
 ghiju.us
 gshortlink.com
+heylink.me
 informasi.us.to
 kminfo.app
 newsupdate.asia
