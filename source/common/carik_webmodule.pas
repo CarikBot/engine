@@ -2611,6 +2611,8 @@ begin
     Result := Format(FFormatNumber,[resultValue]);
     Result := Result.Replace(',000','');
   except
+    Result := ExternalNLP('berapa '+Params.Values['Formula_value']);
+    if Result.IsEmpty then Result := 'duuhh... saya bingung dehh.. ';
   end;
   mathParser.Free;
 end;
@@ -4509,17 +4511,19 @@ begin
     begin
       requestJson['client_id'] := FClientId;
     end;
-    requestJson['message/message_id'] := AMessageID.ToString;
+    requestJson['message/message_id'] := MessageID;
     requestJson['message/text'] := (AText);
     requestJson['message/reply'] := (AReply);
     requestJson['message/from/id'] := AUserID;
     requestJson['message/from/name'] := AFullName;
     requestJson['message/from/username'] := AUserName;
     requestJson['message/chat/channel'] := AChannelID;
-    requestJson['message/chat/id'] := AMessageID.ToString;
+    requestJson['message/chat/id'] := MessageID;
     requestJson['message/chat/is_mentioned'] := is_mentioned;
     requestJson['message/chat/is_group'] := is_group;
     requestJson['message/intents/name'] := SimpleBOT.SimpleAI.IntentName;
+    requestJson['message/dashboard_device_id'] := DashboardDeviceID;
+
     if AReplyFromMessageId > 0 then requestJson['message/chat/is_reply'] := 0;
     if AIsGroup then
     begin

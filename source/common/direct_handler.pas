@@ -111,7 +111,7 @@ begin
     if Text = 'False' then
       Text := '';
 
-    messageID := jsonData.Value['message/message_id'];
+    MessageID := jsonData.Value['message/message_id'];
     chatID := jsonData.Value['message/chat/id'];
     chatType := jsonData.Value['message/chat/type'];
     groupID := jsonData.Value['message/chat/group_id'];
@@ -210,8 +210,12 @@ begin
   SimpleBOT.FirstSessionResponse := s2b(Config[CONFIG_FIRST_SESSION_RESPONSE]);
 
   try
-    Carik.GroupName := jsonData.GetPath('message.chat.title').AsString;
+    Carik.GroupName := jsonData.GetPath('message.chat.group_name').AsString;
   except
+    try
+      Carik.GroupName := jsonData.GetPath('message.chat.title').AsString;
+    except
+    end;
   end;
   Carik.UserPrefix := channelID;
 
