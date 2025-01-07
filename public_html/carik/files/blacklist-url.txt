@@ -5,18 +5,23 @@
 @dogsqhouse_bot
 @dogsprize_bot
 @EmpirTokenxBot
+@lacaknomer_bot
 @MajorAidrops_Bot
 @MajorAllBot
 @MAJORSTORYBOT
 @Notcoin_DroopBot
+@Notcoin_luckybot
+@PAWSOG_nbot
 @PAWSQO_BOT
 @SpinTetherBOT
 @TetherSpinsBOT
 @TondropAI_bot
+@TONEWYERBOT
 @XEmpireTelegramBot
 @xFreeSpinx_bot
 @xtoncoinspin_bot
 @xtonspin_bot
+@XTONCHRISTMASBOT
 putri_aniss334
 Raymond_adminFx
 
