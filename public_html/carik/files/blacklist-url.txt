@@ -10,6 +10,7 @@
 @MajorAllBot
 @MAJORSTORYBOT
 @Notcoin_DroopBot
+@Notcoin_litebot
 @Notcoin_luckybot
 @PAWSOG_nbot
 @PAWSQO_BOT
@@ -27,6 +28,7 @@ Raymond_adminFx
 
 # Keyword
 $DOGS
+listrikgratis
 
 # Telegram
 t.me/+dIRnvlnAAd5jZjc8
@@ -79,6 +81,7 @@ voxmn.pl/nKHr8/?LokerBUMN24
 AirdropMaga.lol
 aply1-id.com
 antgpt.org
+best-value.ltd
 bansos-2024.info
 bansos2024.info
 bantuan.us.to
@@ -93,9 +96,11 @@ ghiju.us
 gshortlink.com
 heylink.me
 informasi.us.to
+klikhere.website
 kminfo.app
 newsupdate.asia
 ppkh.site
+register2024.live
 rkyt.eu
 sosialasia.com
 spoo.me
