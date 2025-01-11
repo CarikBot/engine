@@ -12,6 +12,8 @@
 @Notcoin_DroopBot
 @Notcoin_litebot
 @Notcoin_luckybot
+@Notcoin_moonbot
+@Notcoin
 @PAWSOG_nbot
 @PAWSQO_BOT
 @SpinTetherBOT
@@ -106,6 +108,7 @@ sosialasia.com
 spoo.me
 tribunsinfo.cc
 trustklik.live
+uasx11.com
 vitur.me
 xbeack.asia
 ze-me.xyz
