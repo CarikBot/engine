@@ -699,6 +699,9 @@ begin
 
             Suffix := '\n[Halo '+TELEGRAM.InvitedFullName+'](tg://user?id='+ TELEGRAM.InvitedUserId + ') silakan ubah nama anda yang lebih familiar dibaca agar tidak dianggap sebagai spammer.\n';
 
+            //TODO: if autokick Unfit User
+            TELEGRAM.KickUser(TELEGRAM.ChatID, TELEGRAM.UserID, 'unfit user');
+
           end;
 
           if not isSapaMemberBaru(TELEGRAM.ChatID) then
@@ -775,6 +778,7 @@ begin
             end
             else
             if ((Pos('spam', Text.ToLower) = 1)
+              or(Pos('scam', Text.ToLower) = 1)
               or(Pos('penipuan', Text.ToLower) = 1)
               or(Pos('@admin', Text.ToLower) = 1)
               or (Text.ToLower.IsExists('/scam'))
