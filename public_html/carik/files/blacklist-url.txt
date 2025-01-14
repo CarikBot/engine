@@ -22,6 +22,7 @@
 @TONEWYERBOT
 @XEmpireTelegramBot
 @xFreeSpinx_bot
+@XTONXEBOT
 @xtoncoinspin_bot
 @xtonspin_bot
 @XTONCHRISTMASBOT
