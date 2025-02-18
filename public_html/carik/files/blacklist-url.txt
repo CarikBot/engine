@@ -1,5 +1,6 @@
 # Telegram Bot
 @majorwbot
+@BiggesTonBot
 @DinoAirdBot
 @dogshouse_bot
 @dogsqhouse_bot
@@ -88,6 +89,7 @@ best-value.ltd
 bansos-2024.info
 bansos2024.info
 bantuan.us.to
+bantuanbansospkh.net
 best-value.ltd
 byfux.win
 clalm.one
@@ -98,14 +100,18 @@ gets-offcial.com
 ghiju.us
 gshortlink.com
 heylink.me
+indodock.com
+info-ind.com
 informasi.us.to
 klikhere.website
 kminfo.app
 newsupdate.asia
 ppkh.site
 register2024.live
+rakyat.me
 rkyt.eu
 site-klik.com
+st-rg.com
 sosialasia.com
 spoo.me
 tribunsinfo.cc
