@@ -169,7 +169,7 @@ const
   EXTERNAL_ACCESS_TIMEOUT = 5000;
   EXTERNAL_NLP_TIMEOUT = 30000;
   GPT_TIMEOUT_DEFAULT = 60000;
-  ERR_TIMEOUT_MESSAGE = 'Maaf, saat ini layanan belum bisa diakses. Coba lagi beberapa saat lagi.';
+  ERR_TIMEOUT_MESSAGE = 'Maaf, saat ini layanan belum bisa diakses. Coba beberapa saat lagi.';
   ERR_INVALID_PARAMETER = 'Invalid parameter.';
   ERR_INVALID_METHOD = 'Invalid method.';
 
