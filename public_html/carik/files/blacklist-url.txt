@@ -17,6 +17,7 @@
 @Notcoin
 @PAWSOG_nbot
 @PAWSQO_BOT
+@saylorsignals_bot
 @SpinTetherBOT
 @TetherSpinsBOT
 @TondropAI_bot
@@ -27,7 +28,6 @@
 @xtoncoinspin_bot
 @xtonspin_bot
 @XTONCHRISTMASBOT
-@saylorsignals_bot
 putri_aniss334
 Raymond_adminFx
 
@@ -93,11 +93,13 @@ best-value.ltd
 bansos-2024.info
 bansos2024.info
 bantuan.us.to
+bantuan2026.com
 bantuanbansospkh.net
 best-value.ltd
 bitly.cx
 byfux.win
 clalm.one
+daftarxc25.my.id
 directklick.com
 eth-spin.lol
 geets-cliks.com
@@ -113,6 +115,7 @@ kminfo.app
 newsupdate.asia
 plkz.mom
 ppkh.site
+ppr-vip.site
 register2024.live
 rakyat.me
 rkyt.eu
