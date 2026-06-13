@@ -114,6 +114,7 @@ type
     FVenueLongitude: double;
     FVenueName: string;
     FGroupData: TIniFile;
+    FIsCustomActionFileExist:boolean;
 
     // TELEGRAM
     function getActiveContext: string;
@@ -419,6 +420,7 @@ type
     property CustomReplyURLFromExternalNLP: string read FCustomReplyURLFromExternalNLP;
     property CustomReplyActionTypeFromExternalNLP: string read FCustomReplyActionTypeFromExternalNLP;
     property CustomReplyDataFromExternalNLP: TJSONUtil read FCustomReplyDataFromExternalNLP;
+    property IsCustomActionFileExist: boolean read FIsCustomActionFileExist write FIsCustomActionFileExist;
     procedure SaveActionToUserDataFromCard(AData: TJSONObject);
     procedure SaveActionToUserDataFromForm(AData: TJSONObject);
     procedure SaveActionToUserData(AActionType: string; AData: TJSONObject = nil);
@@ -2609,6 +2611,8 @@ begin
     Result := Format(FFormatNumber,[resultValue]);
     Result := Result.Replace(',000','');
   except
+    Result := ExternalNLP('berapa '+Params.Values['Formula_value']);
+    if Result.IsEmpty then Result := 'duuhh... saya bingung dehh.. ';
   end;
   mathParser.Free;
 end;
@@ -3209,6 +3213,7 @@ var
   i, j, additionScore: integer;
   s, triggerName, triggerWord: string;
   jData: TJSONData;
+  lstURL: TStringList;
 begin
   Result := 0;
   AText := AText.ToLower;
@@ -3247,15 +3252,32 @@ begin
       triggerWord := jData.Items[i].Items[j].AsString;
       if preg_match(triggerWord, AText) then
       begin
+        LogUtil.Add(triggerName + '/' + triggerWord, 'SPAM-CHECK');
         Result := Result + additionScore;
       end;
     end;
   end;
   jData.Free;
 
-  if Result < 80 then
+  if Result < SPAM_SCORE_THRESHOLD then
   begin
+    // check blacklisted URL
+    lstURL := TStringList.Create;
+    lstURL.LoadFromFile(BLACKLIST_URL_FILENAME);
+    for i := 0 to lstURL.Count -1 do
+    begin
+      s := LowerCase(lstURL[i]).Trim;
+      if s.IsEmpty then Continue;
+      if s.IsExists('#') then Continue;
+      if Pos( s, AText) > 0 then
+      begin
+        Result := Result + SPAM_SCORE_THRESHOLD;
+      end;
+    end;
+    lstURL.Free
+
     //TODO: check from spam-score api;
+
   end;
 
   if Result >= SPAM_SCORE_THRESHOLD then
@@ -4015,6 +4037,11 @@ begin
     jsonOutput['processing_time'] := SimpleBOT.SimpleAI.ElapsedTime.ToString.ToInteger;
   end;
 
+  if FIsCustomActionFileExist then
+  begin
+    jsonOutput.ValueArray['action/files'] := FCustomActionFiles;
+  end;
+
   if FIsDebug then
     Result := jsonOutput.AsJSONFormated
   else
@@ -4484,17 +4511,19 @@ begin
     begin
       requestJson['client_id'] := FClientId;
     end;
-    requestJson['message/message_id'] := AMessageID.ToString;
+    requestJson['message/message_id'] := MessageID;
     requestJson['message/text'] := (AText);
     requestJson['message/reply'] := (AReply);
     requestJson['message/from/id'] := AUserID;
     requestJson['message/from/name'] := AFullName;
     requestJson['message/from/username'] := AUserName;
     requestJson['message/chat/channel'] := AChannelID;
-    requestJson['message/chat/id'] := AMessageID.ToString;
+    requestJson['message/chat/id'] := MessageID;
     requestJson['message/chat/is_mentioned'] := is_mentioned;
     requestJson['message/chat/is_group'] := is_group;
     requestJson['message/intents/name'] := SimpleBOT.SimpleAI.IntentName;
+    requestJson['message/dashboard_device_id'] := DashboardDeviceID;
+
     if AReplyFromMessageId > 0 then requestJson['message/chat/is_reply'] := 0;
     if AIsGroup then
     begin
@@ -4522,8 +4551,10 @@ begin
     httpResponse := Post;
     if _GET['_DEBUG'] <> '1' then
     begin
-      //LogUtil.Add(httpResponse.ResultText, 'logchat');
     end;
+    //LogUtil.Add(responseJson.AsJSON, 'logchat');
+    //LogUtil.Add(log_url, 'logchat');
+    //LogUtil.Add(httpResponse.ResultText, 'logchat');
     Free;
   end;
   try
@@ -4591,6 +4622,7 @@ begin
     ContentType := 'application/json';
     RequestBody := TStringStream.Create(requestJson.AsJSON);
     try
+      LogUtil.Add( 'submit: ' + requestJson.AsJSON, 'JOIN', False, AppData.logDir + 'logjoin.log');
       http_response := Post;
       LogUtil.Add( 'response-join: ' + http_response.ResultText, 'JOIN');
     except
@@ -4735,6 +4767,7 @@ begin
     SimpleBOT.StorageType := stRedis;
   end;
   Carik := TCarikController.Create;
+  FCustomActionFiles := nil;
   FLanguage := 'en-id';
   FSendAudio := False;
   FSendPhoto := False;
@@ -4775,6 +4808,7 @@ begin
   FCustomReplyTypeFromExternalNLP := '';
   FCustomReplyURLFromExternalNLP := '';
   FCustomReplyActionTypeFromExternalNLP := '';
+  FIsCustomActionFileExist := False;
   FExternalNLPStarted := False;
   FGPTTimeout := 0;
   FPackageName := '';
@@ -4923,7 +4957,7 @@ begin
   begin
     SimpleBOT.SimpleAI.AdditionalParameters.Values['ClientId'] := ClientId;;
     SimpleBOT.SimpleAI.AdditionalParameters.Values['client_id'] := ClientId;
-    if DeviceId.IsNotEmpty then SimpleBOT.SimpleAI.AdditionalParameters.Values['dashboard_device_id'] := DeviceId;
+    if DeviceId.IsNotEmpty then SimpleBOT.SimpleAI.AdditionalParameters.Values['dashboard_device_id'] := DashboardDeviceID.ToString;
     if IsDelayReplay then SimpleBOT.SimpleAI.AdditionalParameters.Values['delay_reply'] := '1';
   end;
   if Carik.IsGroup then
@@ -5399,6 +5433,7 @@ function TCarikWebModule.FormInputHandler: boolean;
           FCustomReplyActionTypeFromExternalNLP := 'text';
           if FCustomReplyTypeFromExternalNLP.IsNotEmpty then
           begin
+            LogUtil.Add('external data not empty', 'FORM');
             FCustomReplyActionTypeFromExternalNLP := FCustomReplyDataFromExternalNLP['action/type'];
             FCustomReplyURLFromExternalNLP := FCustomReplyDataFromExternalNLP['action/url'];
             FCustomReplyName := FCustomReplyDataFromExternalNLP['action/name'];
@@ -5706,7 +5741,22 @@ begin
           FCustomReplyDataFromExternalNLP.LoadFromJsonString(httpResponse.ResultText, False);
           Suffix := FCustomReplyDataFromExternalNLP['text'];
 
+          // check files - taruh di sini karena konflik dengan code di bawah *1
+          try
+            if not (FCustomReplyDataFromExternalNLP.Data.FindPath('action.files') = nil) then
+            begin
+              FIsCustomActionFileExist := True;
+              FCustomActionFiles := TJSONArray(GetJSON(FCustomReplyDataFromExternalNLP.Data.GetPath('action.files').AsJSON));
+            end;
+          except
+            on E:Exception do
+            begin
+              //LogUtil.Add('Error: ' + E.Message, 'FORM');
+            end;
+          end;
+
           //TODO: build custom action
+          //TODO: ref *1
           FCustomReplyTypeFromExternalNLP := FCustomReplyDataFromExternalNLP['type'];
           FCustomReplyActionTypeFromExternalNLP := 'text';
           if FCustomReplyTypeFromExternalNLP.IsNotEmpty then
@@ -5730,14 +5780,6 @@ begin
               s := ACTION_SUFFIX.Replace('%s', s);
               Suffix += '\n' + s;
               }
-            end;
-
-            // files
-            FCustomActionFiles := Nil;
-            try
-              LogUtil.Add('ada file', 'FORM');
-              FCustomActionFiles := TJSONArray(FCustomReplyDataFromExternalNLP.Data.GetPath('files'));
-            except
             end;
 
           end;

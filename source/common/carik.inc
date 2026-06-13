@@ -76,6 +76,7 @@ const
   LINE_TOKEN = 'line/default/token';
   LINE_BOT_REPLY_DISABLE = 'line/default/reply_disable';
   LINE_BOT_FIRST_SESSION_RESPONSE = 'line/default/first_session_response';
+  TELEGRAM_GROUP_MAXIMUM_MEMBER_COUNT = 1500;
 
   WITAI_TOKEN = 'witai/default/token';
   GOOGLE_KEY = 'google/default/key';
@@ -138,10 +139,12 @@ const
 
   NEW_MEMBER_INTERVAL_POST_PERMITTED = 20;
   SPAM_SCORE_THRESHOLD = 80;
+  SPAM_SCORE_FORWARD_STORY = 80;
   SPAM_WORD = 'ai/default/spam_word';
   SPAM_CAS_OFFENSE = 1; // api.cas.chat
 
   GROUP_DATA_FILENAME = 'files/carik/carik-groupdata.dat';
+  BLACKLIST_URL_FILENAME = 'files/blacklist-url.txt';
   CALLBACK_QUERY_TIMEOUT = 5; // 5 minutes
   CALLBACK_QUERY_TIMEOUT_PREFIX = 30; // 5 minutes
   MESSAGE_TYPE = 'message_type';
@@ -166,7 +169,7 @@ const
   EXTERNAL_ACCESS_TIMEOUT = 5000;
   EXTERNAL_NLP_TIMEOUT = 30000;
   GPT_TIMEOUT_DEFAULT = 60000;
-  ERR_TIMEOUT_MESSAGE = 'Maaf, saat ini layanan belum bisa diakses. Coba lagi beberapa saat lagi.';
+  ERR_TIMEOUT_MESSAGE = 'Maaf, saat ini layanan belum bisa diakses. Coba beberapa saat lagi.';
   ERR_INVALID_PARAMETER = 'Invalid parameter.';
   ERR_INVALID_METHOD = 'Invalid method.';
 

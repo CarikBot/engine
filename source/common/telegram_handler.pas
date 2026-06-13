@@ -415,8 +415,8 @@ end;
 procedure TTelegramHandler.Post;
 var
   updateID, lastUpdateID: longint;
-  i, j, spamScoreTotal: integer;
-  s, imgTag, audioCaption, voiceFileName, mp3FileName, tmpStr, fileType, fileCaption, url: string;
+  i, j, spamScoreTotal, memberCount, deltaMember: integer;
+  s, key, imgTag, audioCaption, voiceFileName, mp3FileName, tmpStr, fileType, fileCaption, url: string;
   disableMarkdown, isHandled, localReplyDisable, canSendMessage, isEditMessage: boolean;
   forceSendMessage, forceReply: boolean;
   replyText: TStringList;
@@ -479,6 +479,31 @@ begin
   SimpleBOT.SessionUserID := UniqueID;
   SimpleBOT.FirstSessionResponse := s2b(Config[TELEGRAM_BOT_FIRST_SESSION_RESPONSE]);
 
+  // get member count
+  deltaMember := 0;
+  if TELEGRAM.IsGroup then
+  begin
+    memberCount := TELEGRAM.GroupMemberCount(TELEGRAM.ChatID);
+    if memberCount > TELEGRAM_GROUP_MAXIMUM_MEMBER_COUNT then
+    begin
+      key := BotName + '_group_' + TELEGRAM.ChatID + '_count';
+      s := SimpleBOT.Redis[key];
+      //LogUtil.Add(TELEGRAM.GroupName + '; member dari db: ' + s, '#MEMBER');
+      if s2i(s) <= 0 then
+      begin
+        LogUtil.Add(TELEGRAM.GroupName + '; set db: ' + memberCount.ToString, '#MEMBER');
+      end
+      else
+      begin
+        deltaMember := memberCount - s2i(s);
+        //if deltaMember > 0 then
+        //   LogUtil.Add(TELEGRAM.GroupName + ' member: ADD: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER')
+        //else
+        //   LogUtil.Add(TELEGRAM.GroupName + ' member: ' + memberCount.ToString + ' ('+deltaMember.ToString+')', '#MEMBER');
+      end;
+      SimpleBOT.Redis[key] := memberCount.ToString;
+    end;
+  end;
 
   if IsGlobalUserBlackListed(Carik.UserPrefix + '-' + Carik.UserID) then
   begin
@@ -661,6 +686,7 @@ begin
         begin
           s := Request.Content.Replace(#13,'').Replace(#10,'');
           LogUtil.Add(RequestAsJson.AsJSON, '> JOIN');
+          LogUtil.Add(RequestAsJson.AsJSON, '> JOIN', False, AppData.logDir + 'tele-join.log');
 
           Carik.IsInvitation := True;
           if IsSuspected(TELEGRAM.InvitedUserId, TELEGRAM.InvitedFullName) then
@@ -672,6 +698,9 @@ begin
             Suffix := Suffix + s + '\n';
 
             Suffix := '\n[Halo '+TELEGRAM.InvitedFullName+'](tg://user?id='+ TELEGRAM.InvitedUserId + ') silakan ubah nama anda yang lebih familiar dibaca agar tidak dianggap sebagai spammer.\n';
+
+            //TODO: if autokick Unfit User
+            TELEGRAM.KickUser(TELEGRAM.ChatID, TELEGRAM.UserID, 'unfit user');
 
           end;
 
@@ -737,7 +766,7 @@ begin
             LogJoin(TELEGRAM_CHANNEL_ID, TELEGRAM.ChatID, TELEGRAM.GroupName, TELEGRAM.InvitedUserId, TELEGRAM.InvitedUserName, TELEGRAM.InvitedFullName, TELEGRAM.InvitedBy, RestrictUser);
             LogUtil.Add(Request.Content.Replace(#13,'').Replace(#10,''), 'JOIN');
           end;
-          exit; delete
+          //ULIL: exit;
         end
         else
         begin
@@ -749,6 +778,8 @@ begin
             end
             else
             if ((Pos('spam', Text.ToLower) = 1)
+              or(Pos('scam', Text.ToLower) = 1)
+              or(Pos('penipuan', Text.ToLower) = 1)
               or(Pos('@admin', Text.ToLower) = 1)
               or (Text.ToLower.IsExists('/scam'))
               or (Text.ToLower.IsExists('/admin'))
@@ -791,6 +822,19 @@ begin
                 begin
                   spamScoreTotal := SPAM_SCORE_THRESHOLD;
                 end;
+                if TELEGRAM.IsForwardFromStory then
+                begin
+                  spamScoreTotal+= SPAM_SCORE_FORWARD_STORY;
+                  if isBlackListed( TELEGRAM.UserName, TELEGRAM.UserID) then
+                  begin
+                    spamScoreTotal+= SPAM_SCORE_THRESHOLD;
+                  end;
+                  if isBlackListed( TELEGRAM.StoryChatUsername, TELEGRAM.StoryChatId) then
+                  begin
+                    spamScoreTotal+= SPAM_SCORE_THRESHOLD;
+                  end;
+                  LogUtil.Add( spamScoreTotal.ToString + ': ' + RequestAsJson.AsJSON, 'FWD', False, AppData.logDir + 'forward-from-story.log');
+                end;
                 if Carik.isSpamChecking or (spamScoreTotal>0) then
                 begin
                   //if s.IsNotEmpty then //TODO: fix function isSpamChecking
@@ -823,6 +867,7 @@ begin
               tmpStr := Text.ToLower;
               if tmpStr.IsPregMatch('^(kick|tendang)') then
               begin
+                LogUtil.Add(RequestAsJson.AsJSON, '#KICK', False, AppData.logDir + 'kick.log');
                 Text := '_groupkickrequest ' + TELEGRAM.ChatID + ' '  + TELEGRAM.ReplyFromID;
                 //if TELEGRAM.ReplyFromUserName = (SimpleBOT.BotName + 'Bot') then
                 //  Text := '_gropkickwhitelisted';
@@ -1093,7 +1138,7 @@ begin
 
         s := PrepareTextToSpeech(SimpleBOT.SimpleAI.ResponseText.Text);
         if s <> '' then
-          TELEGRAM.SendAudio(TELEGRAM.ChatID, Config[CARIK_TTS_URL] + s,
+          TELEGRAM.SendVoice(TELEGRAM.ChatID, Config[CARIK_TTS_URL] + s,
             audioCaption, MessageID);
       end;
     end;
@@ -1211,8 +1256,8 @@ begin
           begin
             LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + ':('+TELEGRAM.GroupName+')::' + TELEGRAM.ResultText + ' |-> ' + s, 'SENTFAILED');
           end;
-          LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + '('+TELEGRAM.GroupName+')::' + OriginalText + ' |-> ' + s, 'SENTLOG1');
-          LogUtil.Add(Request.Content.Replace(#13,'').Replace(#10,''), 'SENTLOG2');
+          //LogUtil.Add(TELEGRAM.ChatID + '/' + TELEGRAM.UserID + '('+TELEGRAM.GroupName+')::' + OriginalText + ' |-> ' + s, 'SENTLOG1');
+          //LogUtil.Add(Request.Content.Replace(#13,'').Replace(#10,''), 'SENTLOG2');
         end;// /IsCustomAction
       end;
       if AppData.debug then
@@ -1256,7 +1301,7 @@ begin
 
   if SendAudio then
   begin
-    TELEGRAM.SendAudio(TELEGRAM.ChatID, FileURL, Caption, MessageID);
+    TELEGRAM.SendVoice(TELEGRAM.ChatID, FileURL, Caption, MessageID);
   end;
 
   if SendPhoto then
@@ -1281,7 +1326,13 @@ begin
         begin
           url := SimpleBOT.SimpleAI.CustomReply['action/files['+i.ToString+']/url'];
           fileCaption := SimpleBOT.SimpleAI.CustomReply['action/files['+i.ToString+']/caption'];
-          TELEGRAM.SendAudio(TELEGRAM.ChatID, url, fileCaption, MessageID);
+          voiceFileName := ExtractFileName(url);
+          voiceFileName := preg_replace('[\d.]', '', voiceFileName);
+          voiceFileName := VOICE_TMP_PATH + voiceFileName.Replace('---mp', '') + ExtractFileExt(url);
+          if DownloadFile(url, voiceFileName) then
+          begin
+	          TELEGRAM.SendVoice(TELEGRAM.ChatID, voiceFileName, fileCaption, MessageID);
+          end;
         end;
         if fileType = 'image' then
         begin
@@ -1309,7 +1360,7 @@ begin
       fileType := CustomActionFiles.Items[i].GetPath('type').AsString;
       fileCaption := CustomActionFiles.Items[i].GetPath('caption').AsString;
       if fileType = 'audio' then
-        TELEGRAM.SendAudio(TELEGRAM.ChatID, url, fileCaption, MessageID);
+        TELEGRAM.SendVoice(TELEGRAM.ChatID, url, fileCaption, MessageID);
     end;
   end;
 
@@ -1342,6 +1393,15 @@ begin
     //LogChat(TELEGRAM_CHANNEL_ID, Carik.GroupChatID, Carik.GroupName,
     //  '-1', TELEGRAM.ResultMessageID, SimpleBOT.SimpleAI.ResponseText.Text, '',
     //  Carik.IsGroup, False);
+    if deltaMember > 0 then
+    begin
+      s := 'Group ini sepertinya kedatangan %s member baru.\nCoba colek admin untuk checking.';
+      s += '\n(' + TELEGRAM.AdminListAsString + ')';
+      s := s.Replace('%s', deltaMember.ToString);
+      TELEGRAM.SendMessage(TELEGRAM.ChatID, s);
+      LogUtil.Add('send notif ke ' + TELEGRAM.GroupName + ', baru: ' + deltaMember.ToString, '#MEMBER');
+      //TELEGRAM.SendMessage(TELEGRAM.ChatID, s, MessageID, currentThreadIdAsString);
+    end;
   end;
 
   s := Text;
